@@ -3,7 +3,7 @@ import os
 from utils.config import GOOGLE_API_KEY, MODEL_OPTIONS
 from utils.pdf_handler import get_pdf_text, get_text_chunks
 
-from langchain.embeddings import HuggingFaceEmbeddings
+from langchain_community.embeddings import HuggingFaceEmbeddings
 from langchain_community.vectorstores import Chroma
 from langchain_google_genai import GoogleGenerativeAIEmbeddings
 
@@ -26,9 +26,14 @@ def get_embeddings(model_provider):
   if model_provider == "groq":
     return HuggingFaceEmbeddings(model_name="sentence-transformers/all-MiniLM-L12-v2")
   elif model_provider == "gemini":
+    if not GOOGLE_API_KEY:
+      raise ValueError(
+        "GOOGLE_API_KEY is missing. Please add a valid GOOGLE_API_KEY to your .env file or environment."
+      )
     return GoogleGenerativeAIEmbeddings(
       model="models/embedding-001",
-      google_api_key=GOOGLE_API_KEY
+      google_api_key=GOOGLE_API_KEY,
+      request_options={"timeout": 120}
     )
   else:
     raise ValueError("Unsupported Model Provider")
@@ -64,18 +69,24 @@ def get_or_create_vectorstore(uploaded_files, model_provider):
   persist_path = PERSIST_DIR[model_provider]
 
   # If the vectorstore directory exists and is not empty, load and append new chunks
-  if os.path.exists(persist_path) and os.listdir(persist_path):
-    vectorstore = Chroma(
-      persist_directory=persist_path,
-      embedding_function=embedding
-    )
-    vectorstore.add_texts(chunks)
-  else:
-    # Otherwise, create a new vectorstore from the chunks
-    vectorstore = Chroma.from_texts(
-      texts=chunks,
-      embedding=embedding,
-      persist_directory=persist_path
-    )
+  try:
+    if os.path.exists(persist_path) and os.listdir(persist_path):
+      vectorstore = Chroma(
+        persist_directory=persist_path,
+        embedding_function=embedding
+      )
+      vectorstore.add_texts(chunks)
+    else:
+      # Otherwise, create a new vectorstore from the chunks
+      vectorstore = Chroma.from_texts(
+        texts=chunks,
+        embedding=embedding,
+        persist_directory=persist_path
+      )
+  except Exception as e:
+    raise RuntimeError(
+      f"Embedding кызматы иштебей калды же убакыт өттү: {str(e)}\n" \
+      "API ачкычыңызды, тармагыңызды текшерип, кайра аракет кылыңыз."
+    ) from e
 
   return vectorstore

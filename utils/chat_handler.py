@@ -62,7 +62,7 @@ def handle_user_input(model_provider, model, chain):
   )
 
   question = st.chat_input(
-    "💬 Ask a Question from the PDF Files",
+    "💬 PDF файлдарынан суроо бериңиз",
     disabled=disable_question_input
   )
 
@@ -72,14 +72,14 @@ def handle_user_input(model_provider, model, chain):
   with st.chat_message("user"):
     st.markdown(question)
   with st.chat_message("ai"):
-    with st.spinner("Thinking..."):
+    with st.spinner("Ойлонууда..."):
       try:
         output = chain.invoke({"input": question})["answer"]
         st.markdown(output)
         pdf_names = [f.name for f in st.session_state.get("pdf_files")]
         st.session_state.chat_history.append((question, output, model_provider, model, pdf_names, datetime.now()))
       except Exception as e:
-        st.error(f"Error: {str(e)}")
+        st.error(f"Ката: {str(e)}")
 
 def render_uploaded_files_expander():
   """
@@ -88,7 +88,7 @@ def render_uploaded_files_expander():
   """
   uploaded_files = st.session_state.get(f"uploaded_files_{st.session_state.uploader_key}", [])
   if uploaded_files and not st.session_state.get("unsubmitted_files"):
-    with st.expander("📎 Uploaded Files:"):
+    with st.expander("📎 Жүктөлгөн файлдар:"):
       for f in uploaded_files:
         st.markdown(f"- {f.name}")
 
@@ -99,12 +99,12 @@ def render_download_chat_history():
   """
   df = pd.DataFrame(
     st.session_state.chat_history,
-    columns=["Question", "Answer", "Model", "Model Name", "PDF File", "Timestamp"]
+    columns=["Суроо", "Жооп", "Модель", "Модель Аты", "PDF Файл", "Убакыт"]
   )
 
-  with st.expander("📎 Download Chat History:"):
+  with st.expander("📎 Чат тарыхын жүктөө:"):
     st.sidebar.download_button(
-      "📥 Download Chat History",
+      "📥 Чат тарыхын жүктөө",
       data=df.to_csv(index=False),
       file_name="chat_history.csv",
       mime="text/csv"

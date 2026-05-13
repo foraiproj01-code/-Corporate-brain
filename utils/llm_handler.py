@@ -39,13 +39,19 @@ def get_llm_chain(model_provider, model, vectorstore):
 
   # Initialize LLM instance based on provider
   if model_provider == "groq":
-    print(model, GROQ_API_KEY)
+    if not GROQ_API_KEY:
+      raise ValueError(
+        "GROQ_API_KEY is missing. Please add GROQ_API_KEY to your .env file or environment."
+      )
     llm = ChatGroq(model=model, api_key=GROQ_API_KEY)
   elif model_provider == "gemini":
+    if not GOOGLE_API_KEY:
+      raise ValueError(
+        "GOOGLE_API_KEY is missing. Please add GOOGLE_API_KEY to your .env file or environment."
+      )
     llm = ChatGoogleGenerativeAI(model=model, api_key=GOOGLE_API_KEY)
   else:
     return None
-    # raise ValueError("Unsupported Model Provider")
 
   # Convert vectorstore into a retriever, pulling top 3 relevant chunks
   retriever = vectorstore.as_retriever(search_kwargs={"k": 3})

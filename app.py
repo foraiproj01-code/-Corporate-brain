@@ -1,4 +1,6 @@
 import streamlit as st
+import warnings
+warnings.filterwarnings("ignore", category=FutureWarning, module="transformers")
 
 from utils.chat_handler import (
   setup_session_state,
@@ -28,9 +30,9 @@ def main():
   - Renders chat interface and handles user questions
   - Allows downloading chat history
   """
-  st.set_page_config(page_title="RAG PDFBot", layout="centered")
-  st.title("👽 RAG PDFBot")
-  st.caption("Chat with multiple PDFs :books:")
+  st.set_page_config(page_title="👽 Corporate brain", layout="centered")
+  st.title("👽 Corporate brain")
+  st.caption("Бир нече PDF менен чат жазыңыз :books:")
 
   # Initialize required Streamlit session state variables
   setup_session_state()
@@ -51,11 +53,11 @@ def main():
 
   # Show message if no files are uploaded yet
   if not st.session_state.get(f"uploaded_files_{st.session_state.uploader_key}", []):
-    st.info("📄 Please upload and submit PDFs to start chatting.")
+    st.info("📄 Чат баштоо үчүн PDF жүктөп, жөнөтүңүз.")
 
   # Warn if new PDFs are uploaded but not submitted
   if st.session_state.get("unsubmitted_files", False):
-    st.warning("📄 New PDFs uploaded. Please submit before chatting.")
+    st.warning("📄 Жаңы PDF жүктөлдү. Чаттан мурун жөнөтүңүз.")
 
   # Show uploaded files summary
   if st.session_state.get("vector_store", None) and st.session_state.get("pdf_files", []):
@@ -67,7 +69,14 @@ def main():
 
   # Show chat input box and process question with selected LLM
   if st.session_state.get("vector_store"):
-    handle_user_input(model_provider, model, get_llm_chain(model_provider, model, st.session_state.get("vector_store")))
+    try:
+      chain = get_llm_chain(model_provider, model, st.session_state.get("vector_store"))
+    except Exception as e:
+      st.error(str(e))
+      chain = None
+
+    if chain:
+      handle_user_input(model_provider, model, chain)
 
   # Developer mode: inspect Chroma vectorstore
   if st.session_state.vector_store:
